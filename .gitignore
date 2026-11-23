@@ -31,3 +31,5 @@ migrate_json.py
 *.env
 .vscode/
 .idea/
+# Unused React frontend
+frontend/

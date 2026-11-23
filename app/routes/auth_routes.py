@@ -8,6 +8,7 @@ from flask_login import (
     login_required,
     current_user
 )
+from sqlalchemy.exc import IntegrityError
 
 from app.extensions import db
 from app.models.user import User
@@ -137,6 +138,70 @@ def login():
         flash("Invalid username or password.", "danger")
 
     return render_template("login.html")
+
+
+@auth_bp.route("/signup", methods=["GET", "POST"])
+def signup():
+
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+
+        username = request.form.get("username", "").strip()[:80]
+        email = request.form.get("email", "").strip().lower()[:255]
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+
+        if not username or not email or not password:
+            flash("Please fill in all fields.", "danger")
+            return render_template("signup.html")
+
+        if "@" not in email or "." not in email.split("@")[-1]:
+            flash("Please enter a valid email address.", "danger")
+            return render_template("signup.html")
+
+        if len(password) < 12:
+            flash("Password must be at least 12 characters.", "danger")
+            return render_template("signup.html")
+
+        if password != confirm:
+            flash("Passwords do not match.", "danger")
+            return render_template("signup.html")
+
+        if (
+            User.query.filter_by(username=username).first()
+            or User.query.filter_by(email=email).first()
+        ):
+            flash(
+                "That username or email is already in use. "
+                "Choose different details.",
+                "danger"
+            )
+            return render_template("signup.html")
+
+        # Role is ALWAYS "User". Never read from the form.
+        user = User(username=username, email=email, role="User")
+        user.set_password(password)
+        db.session.add(user)
+
+        log_auth_action("SIGNUP", username, "New account created")
+
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash(
+                "That username or email is already in use. "
+                "Choose different details.",
+                "danger"
+            )
+            return render_template("signup.html")
+
+        flash("Account created. You can sign in now.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("signup.html")
 
 
 @auth_bp.route("/logout", methods=["POST"])

@@ -20,7 +20,6 @@ run_backup*
 templates/index_backup_phase3.html
 
 # Helper scripts (not reviewed yet, may contain account details)
-create_admin.py
 reset_admin.py
 reset_password.py
 check_*.py

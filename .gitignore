@@ -1,0 +1,33 @@
+# Virtual environment and Python cache
+.venv/
+__pycache__/
+*.pyc
+
+# Database, uploads and instance data (private)
+storage/
+instance/
+app/uploads/
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups and old copies
+backups/
+security_backup/
+storage_backup/
+*.bak
+run_backup*
+templates/index_backup_phase3.html
+
+# Helper scripts (not reviewed yet, may contain account details)
+create_admin.py
+reset_admin.py
+reset_password.py
+check_*.py
+migrate_json.py
+
+# Secrets and editor files
+.env
+*.env
+.vscode/
+.idea/

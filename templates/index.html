@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDMS | Enterprise Document Management</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",Arial,sans-serif}
+body{background:#f4f6fb;color:#1e293b}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:250px;background:#172554;color:white;padding:25px 18px;flex-shrink:0}
+.logo{font-size:23px;font-weight:700;margin-bottom:8px}
+.logo span{color:#60a5fa}
+.subtitle{font-size:11px;color:#94a3b8;margin-bottom:35px}
+.nav-title{font-size:11px;color:#94a3b8;margin:22px 10px 10px;text-transform:uppercase}
+.nav-item{padding:13px 12px;border-radius:8px;cursor:pointer;margin-bottom:6px;color:#cbd5e1;transition:.2s}
+.nav-item:hover,.nav-item.active{background:#2563eb;color:white}
+.main{flex:1;min-width:0}
+.topbar{background:white;padding:20px 30px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0}
+.topbar h2{font-size:21px}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0}
+.menu-btn{display:none;background:#e2e8f0;color:#334155;padding:8px 12px;font-size:18px;line-height:1}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:90}
+.user-info{display:flex;align-items:center;gap:12px}
+.avatar{background:#dbeafe;color:#1d4ed8;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:bold}
+.role{font-size:12px;color:#64748b}
+.content{padding:28px}
+.page{display:none}.page.active{display:block}
+.welcome{margin-bottom:25px}.welcome h1{font-size:26px;margin-bottom:7px}.welcome p{color:#64748b}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px}
+.stat-card{background:white;padding:22px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.stat-card p{color:#64748b;font-size:13px}.stat-card h2{font-size:29px;margin-top:12px}
+.blue{border-left:4px solid #2563eb}.green{border-left:4px solid #16a34a}.orange{border-left:4px solid #f59e0b}.purple{border-left:4px solid #9333ea}
+.panel{background:white;border-radius:12px;padding:22px;margin-bottom:22px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.panel-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.panel-header h3{font-size:18px}
+button{border:none;border-radius:7px;padding:10px 15px;cursor:pointer;font-weight:600}
+button:disabled{opacity:.6;cursor:not-allowed}
+.primary{background:#2563eb;color:white}.primary:hover{background:#1d4ed8}
+.secondary{background:#e2e8f0;color:#334155}.danger{background:#fee2e2;color:#b91c1c}
+.success{background:#dcfce7;color:#166534}.history-btn{background:#ede9fe;color:#6d28d9}
+.hold-btn{background:#fef3c7;color:#92400e}
+.search{padding:11px;border:1px solid #cbd5e1;border-radius:7px;width:260px;max-width:100%;outline:none}
+.table-wrapper{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{padding:14px 12px;text-align:left;border-bottom:1px solid #e2e8f0;font-size:13px}
+th{background:#f8fafc;color:#64748b}
+.status{padding:5px 9px;border-radius:20px;font-size:11px;background:#dcfce7;color:#166534}
+.status.pending{background:#fef3c7;color:#92400e}
+.status.draft{background:#e2e8f0;color:#334155}
+.status.archived{background:#f1f5f9;color:#64748b}
+.hold-badge{padding:5px 9px;border-radius:20px;font-size:11px;background:#fef3c7;color:#92400e;margin-left:6px;white-space:nowrap}
+.retain-note{font-size:11px;color:#64748b;margin-top:6px;white-space:nowrap}
+.actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.actions button{padding:7px 9px;font-size:11px}
+.folder-select{max-width:190px;min-width:115px;padding:7px;border:1px solid #cbd5e1;border-radius:6px;background:white;font-size:11px}
+.drop-zone{border:2px dashed #60a5fa;background:#eff6ff;border-radius:12px;padding:45px 20px;text-align:center;cursor:pointer;transition:.2s}
+.drop-zone:hover,.drop-zone.drag-over{background:#dbeafe;border-color:#2563eb}
+.drop-zone h2{margin-bottom:10px}.drop-zone p{color:#64748b;margin-bottom:15px}
+.drop-zone input{display:none}
+.selected-file{margin-top:15px;color:#166534;font-weight:600;overflow-wrap:anywhere}
+.modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:100;justify-content:center;align-items:center;padding:15px}
+.modal.show{display:flex}
+.modal-content{background:white;width:700px;max-width:100%;max-height:90vh;overflow-y:auto;padding:25px;border-radius:12px}
+.modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:20px}
+.close{background:#fee2e2;color:#b91c1c}
+.empty{text-align:center;padding:30px;color:#64748b}
+.toast{position:fixed;right:20px;bottom:20px;background:#172554;color:white;padding:15px 20px;border-radius:8px;display:none;z-index:200;max-width:90%}
+.version-upload-box{background:#f8fafc;border:1px solid #e2e8f0;border-radius:9px;padding:18px;margin-bottom:20px}
+.version-upload-box input{display:block;margin:12px 0;max-width:100%}
+.version-info{color:#64748b;font-size:12px;margin-top:6px}
+.filter-grid{display:grid;grid-template-columns:repeat(4,minmax(140px,1fr));gap:12px;margin-top:15px}
+.filter-control{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:7px;background:white;color:#334155;outline:none}
+.filter-label{display:block;font-size:12px;color:#64748b;margin-bottom:6px;font-weight:600}
+.filter-footer{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:15px}
+.result-count{font-size:13px;color:#64748b}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.form-grid .full{grid-column:1/-1}
+textarea.filter-control{min-height:90px;resize:vertical;font-family:inherit}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.nowrap{white-space:nowrap}
+.chart-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:22px}
+.chart-grid .panel{margin-bottom:0}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px}
+.two-col .panel{margin-bottom:0}
+.panel-title{font-size:15px;font-weight:700;margin-bottom:16px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:11px;font-size:12px}
+.bar-label{width:95px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569}
+.bar-track{flex:1;background:#eef2f7;border-radius:6px;height:12px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px}
+.bar-count{width:30px;text-align:right;font-weight:700;color:#1e293b}
+.more-note{font-size:11px;color:#64748b;margin-top:4px}
+.ret-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #e2e8f0;font-size:13px}
+.ret-item:last-child{border-bottom:none}
+.ret-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ret-due{font-size:11px;padding:4px 9px;border-radius:20px;background:#fef3c7;color:#92400e;white-space:nowrap;font-weight:600}
+.ret-due.soon{background:#fee2e2;color:#b91c1c}
+.ret-summary{font-size:12px;color:#64748b;margin-bottom:10px}
+.compact table{min-width:0}
+.compact th,.compact td{padding:10px 8px;font-size:12px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(2,1fr)}.filter-grid{grid-template-columns:repeat(2,minmax(120px,1fr))}.chart-grid{grid-template-columns:1fr 1fr}.two-col{grid-template-columns:1fr}}
+@media(max-width:650px){
+.layout{display:block}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:260px;max-width:80%;z-index:100;overflow-y:auto;transform:translateX(-100%);transition:transform .25s}
+.sidebar.open{transform:translateX(0)}
+.sidebar-overlay.show{display:block}
+.menu-btn{display:block}
+.topbar{padding:12px 14px;position:sticky;top:0;z-index:50}
+.topbar h2{font-size:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.avatar{width:34px;height:34px}
+.content{padding:14px}
+.welcome{margin-bottom:16px}.welcome h1{font-size:21px}
+.stats{grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.stat-card{padding:15px}.stat-card h2{font-size:23px;margin-top:8px}
+.chart-grid,.filter-grid,.form-grid{grid-template-columns:1fr}
+.panel{padding:16px}
+.search{width:100%}
+.modal-content{padding:16px}
+.toast{left:12px;right:12px;bottom:12px;max-width:none}
+.actions button{padding:9px 11px;font-size:12px}
+.folder-select{max-width:none;flex:1;min-width:120px;padding:9px}
+.compact table{min-width:420px}
+.doc-table{min-width:0}
+.doc-table thead{display:none}
+.doc-table,.doc-table tbody,.doc-table tr,.doc-table td{display:block;width:100%}
+.doc-table tr{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:12px;padding:6px 12px}
+.doc-table td{border-bottom:none;padding:7px 0;display:flex;justify-content:space-between;gap:12px;text-align:right;overflow-wrap:anywhere}
+.doc-table td::before{content:attr(data-label);font-weight:600;color:#64748b;text-align:left;flex-shrink:0}
+.doc-table td.actions-cell{display:block;text-align:left}
+.doc-table td.actions-cell::before{display:block;margin-bottom:8px}
+.doc-table td.empty{display:block;text-align:center}
+.doc-table td.empty::before{display:none}
+}
+</style>
+</head>
+<body data-is-admin="{{ 'true' if current_user.is_authenticated and current_user.role == 'Admin' else 'false' }}">
+<div class="layout">
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<aside class="sidebar" id="sidebar">
+<div class="logo">EDMS<span>.</span></div>
+<div class="subtitle">ENTERPRISE DOCUMENT SYSTEM</div>
+<div class="nav-title">Workspace</div>
+<div class="nav-item active" onclick="showPage('dashboard',this)">🏠 Dashboard</div>
+<div class="nav-item" onclick="showPage('documents',this)">📁 Documents</div>
+<div class="nav-item" onclick="window.location.href='/folders'">🗂 Folder Management</div>
+<div class="nav-item" onclick="showPage('upload',this)">⬆ Upload Documents</div>
+<div class="nav-title admin-only">Administration</div>
+<div class="nav-item admin-only" onclick="showPage('users',this)">👥 User Management</div>
+<div class="nav-item admin-only" onclick="showPage('activity',this)">📋 Audit Activity</div>
+<div class="nav-title">Account</div>
+<div class="nav-item" onclick="showPage('settings',this)">⚙ Settings</div>
+<div class="nav-item" onclick="logout()">🚪 Logout</div>
+</aside>
+<main class="main">
+<header class="topbar">
+<div class="topbar-left"><button class="menu-btn" id="menuBtn" onclick="toggleSidebar()" aria-label="Menu">☰</button><h2 id="pageTitle">Dashboard</h2></div>
+<div class="user-info">
+<div><strong id="username">{{ current_user.username }}</strong><div class="role" id="userRole">{{ current_user.role }}</div></div>
+<div class="avatar" id="avatar">{{ current_user.username[0]|upper }}</div>
+</div>
+</header>
+<div class="content">
+<section class="page active" id="dashboard">
+<div class="welcome"><h1>Welcome to EDMS 👋</h1><p>Manage, organize and secure your enterprise documents.</p></div>
+<div class="stats">
+<div class="stat-card blue"><p>Total Documents</p><h2 id="totalDocuments">0</h2></div>
+<div class="stat-card green"><p>Total Users</p><h2 id="totalUsers">0</h2></div>
+<div class="stat-card orange"><p>Active Documents</p><h2 id="activeDocuments">0</h2></div>
+<div class="stat-card purple"><p>Legal Hold</p><h2 id="legalHold">0</h2></div>
+</div>
+
+<div class="chart-grid">
+<div class="panel"><div class="panel-title">Documents by Status</div><div id="chartStatus"><div class="empty">Loading...</div></div></div>
+<div class="panel"><div class="panel-title">Documents by Department</div><div id="chartDepartment"><div class="empty">Loading...</div></div></div>
+<div class="panel"><div class="panel-title">Documents by File Type</div><div id="chartType"><div class="empty">Loading...</div></div></div>
+</div>
+
+<div class="two-col">
+<div class="panel"><div class="panel-title">Retention Deadlines (next 90 days)</div><div id="retentionList"><div class="empty">Loading...</div></div></div>
+<div class="panel admin-only"><div class="panel-title">Latest Activity</div>
+<div class="table-wrapper compact"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody id="dashActivity"><tr><td colspan="4" class="empty">Loading...</td></tr></tbody></table></div></div>
+</div>
+
+<div class="panel">
+<div class="panel-header"><h3>Recent Documents</h3><button class="primary" onclick="showPage('documents')">View All</button></div>
+<div class="table-wrapper"><table><thead><tr><th>Document</th><th>Folder</th><th>Uploaded By</th><th>Status</th><th>Version</th></tr></thead><tbody id="recentDocuments"><tr><td colspan="5" class="empty">Loading documents...</td></tr></tbody></table></div>
+</div>
+</section>
+
+<section class="page" id="documents">
+<div class="panel">
+<div class="panel-header"><h3>Document Repository</h3><button class="primary" onclick="showPage('upload')">+ Upload Document</button></div>
+<div>
+<label class="filter-label" for="documentSearch">Search documents</label>
+<input type="text" class="search" id="documentSearch" placeholder="Name, folder, department, reference or description..." oninput="renderDocuments()">
+</div>
+<div class="filter-grid">
+<div><label class="filter-label" for="folderFilter">Folder</label><select class="filter-control" id="folderFilter" onchange="renderDocuments()"><option value="">All Folders</option></select></div>
+<div><label class="filter-label" for="statusFilter">Status</label><select class="filter-control" id="statusFilter" onchange="renderDocuments()"><option value="">All Statuses</option><option value="Draft">Draft</option><option value="Active">Active</option><option value="Archived">Archived</option><option value="Pending">Pending</option></select></div>
+<div><label class="filter-label" for="departmentFilter">Department</label><select class="filter-control" id="departmentFilter" onchange="renderDocuments()"><option value="">All Departments</option></select></div>
+<div><label class="filter-label" for="typeFilter">File Type</label><select class="filter-control" id="typeFilter" onchange="renderDocuments()"><option value="">All File Types</option><option value="PDF">PDF</option><option value="DOC">DOC</option><option value="DOCX">DOCX</option><option value="XLS">XLS</option><option value="XLSX">XLSX</option><option value="TXT">TXT</option><option value="PNG">PNG</option><option value="JPG">JPG</option><option value="JPEG">JPEG</option><option value="TIF">TIF</option><option value="TIFF">TIFF</option></select></div>
+<div><label class="filter-label" for="dateFrom">Uploaded from</label><input type="date" class="filter-control" id="dateFrom" onchange="renderDocuments()"></div>
+<div><label class="filter-label" for="dateTo">Uploaded to</label><input type="date" class="filter-control" id="dateTo" onchange="renderDocuments()"></div>
+</div>
+<div class="filter-footer">
+<span class="result-count" id="resultCount">Showing all documents</span>
+<div class="actions"><select class="folder-select" id="savedSearchSelect" onchange="applySavedSearch()"><option value="">Saved searches...</option></select><button class="secondary" onclick="saveCurrentSearch()">Save Search</button><button class="danger" onclick="deleteSavedSearch()">Delete Saved</button></div>
+<button class="secondary" onclick="clearFilters()">✕ Clear Filters</button>
+</div>
+<div class="table-wrapper" style="margin-top:20px">
+<table class="doc-table"><thead><tr><th>Document</th><th>Folder</th><th>Uploaded By</th><th>Version</th><th>Status</th><th>Actions / Move</th></tr></thead>
+<tbody id="documentTable"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody></table>
+</div>
+</div>
+</section>
+
+<section class="page" id="upload">
+<div class="panel"><div class="panel-header"><h3>Upload New Document</h3></div>
+<form id="uploadForm">
+<div class="drop-zone" id="dropZone">
+<h2>📄 Drag & Drop Your Document</h2><p>Drag a file here or click Browse Files.</p>
+<button type="button" class="primary" onclick="document.getElementById('documentFile').click()">Browse Files</button>
+<input type="file" id="documentFile" name="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.tif,.tiff">
+<div class="selected-file" id="selectedFile">No file selected</div>
+</div>
+<div style="max-width:320px;margin:22px auto 0">
+<label class="filter-label" for="uploadFolder">Folder (optional)</label>
+<select class="filter-control" id="uploadFolder" name="folder_id"><option value="">Unassigned</option></select>
+</div>
+<div style="text-align:center;margin-top:22px"><button type="submit" class="primary" id="uploadButton">Upload Document</button></div>
+</form>
+</div>
+</section>
+
+<section class="page" id="users">
+<div class="panel"><div class="panel-header"><h3>User Management</h3><button class="primary" onclick="loadUsers()">↻ Refresh</button></div>
+<div class="table-wrapper"><table><thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Role</th><th>Account Status</th><th>Action</th></tr></thead><tbody id="userTable"><tr><td colspan="6" class="empty">Loading users...</td></tr></tbody></table></div></div>
+</section>
+
+<section class="page" id="activity">
+<div class="panel"><div class="panel-header"><h3>System Audit Activity</h3><button class="primary" onclick="loadActivity()">↻ Refresh</button></div>
+<div class="table-wrapper"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Document ID</th><th>Details</th><th>IP Address</th></tr></thead><tbody id="activityTable"><tr><td colspan="6" class="empty">Loading activity...</td></tr></tbody></table></div></div>
+</section>
+
+<section class="page" id="settings">
+<div class="panel"><h3>System Information</h3><br><p><strong>Application:</strong> Enterprise Document Management System</p><br><p><strong>Platform:</strong> Flask / Python</p><br><p><strong>Database:</strong> SQLite</p><br><p><strong>Security:</strong> Role-Based Access Control</p><br><p><strong>Storage:</strong> Local Document Repository</p></div>
+</section>
+</div>
+</main>
+</div>
+
+<div class="modal" id="previewModal"><div class="modal-content">
+<div class="modal-header"><h3>Document Preview</h3><button class="close" onclick="closePreview()">✕</button></div>
+<iframe id="previewFrame" title="Document preview" style="width:100%;height:65vh;border:none"></iframe>
+</div></div>
+
+<div class="modal" id="historyModal"><div class="modal-content">
+<div class="modal-header"><div><h3>Document Version History</h3><p class="version-info" id="historyDocumentName"></p></div><button class="close" onclick="closeHistory()">✕</button></div>
+<div class="version-upload-box" id="versionUploadBox"><h4>Upload New Version</h4><p class="version-info">Select an updated file with the same extension as the original document.</p>
+<form id="versionUploadForm"><input type="file" id="versionFile" name="file" required accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.png,.jpg,.jpeg,.tif,.tiff"><button type="submit" class="primary" id="versionUploadButton">Upload New Version</button></form></div>
+<h4 style="margin-bottom:12px">Previous Versions</h4>
+<div class="table-wrapper"><table><thead><tr><th>Version</th><th>Uploaded By</th><th>Date</th><th>Size</th><th>Action</th></tr></thead><tbody id="versionTable"><tr><td colspan="5" class="empty">Loading versions...</td></tr></tbody></table></div>
+</div></div>
+
+<div class="modal" id="editModal"><div class="modal-content">
+<div class="modal-header"><div><h3>Edit Document Details</h3><p class="version-info" id="editDocumentName"></p></div><button class="close" onclick="closeEdit()">✕</button></div>
+<form id="editForm">
+<div class="form-grid">
+<div><label class="filter-label" for="editDepartment">Department</label><input type="text" class="filter-control" id="editDepartment" maxlength="100"></div>
+<div><label class="filter-label" for="editReference">Reference number</label><input type="text" class="filter-control" id="editReference" maxlength="100"></div>
+<div><label class="filter-label" for="editStatus">Status</label><select class="filter-control" id="editStatus"><option value="Draft">Draft</option><option value="Active">Active</option><option value="Archived">Archived</option><option value="Pending">Pending</option></select></div>
+<div><label class="filter-label" for="editRetention">Retain until (optional)</label><input type="date" class="filter-control" id="editRetention"></div>
+<div class="full"><label class="filter-label" for="editDescription">Description</label><textarea class="filter-control" id="editDescription" maxlength="2000"></textarea></div>
+</div>
+<div class="modal-actions"><button type="button" class="secondary" onclick="closeEdit()">Cancel</button><button type="submit" class="primary" id="editSaveButton">Save Changes</button></div>
+</form>
+</div></div>
+
+<div class="modal" id="activityModal"><div class="modal-content">
+<div class="modal-header"><div><h3>Document Activity</h3><p class="version-info" id="activityDocumentName"></p></div><button class="close" onclick="closeActivity()">✕</button></div>
+<div class="table-wrapper"><table><thead><tr><th>Time</th><th>User</th><th>Action</th><th>Details</th></tr></thead><tbody id="docActivityTable"><tr><td colspan="4" class="empty">Loading activity...</td></tr></tbody></table></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let documents=[],users=[],folders=[],currentHistoryDocumentId=null,editingDocumentId=null;
+const isAdmin=document.body.dataset.isAdmin==="true";
+const currentUsername=(document.getElementById("username")?.textContent||"").trim();
+
+function toggleSidebar(){
+document.getElementById("sidebar").classList.toggle("open");
+document.getElementById("sidebarOverlay").classList.toggle("show");
+}
+function closeSidebar(){
+document.getElementById("sidebar").classList.remove("open");
+document.getElementById("sidebarOverlay").classList.remove("show");
+}
+
+function showPage(page,element){
+closeSidebar();
+document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));
+document.getElementById(page).classList.add("active");
+if(element)element.classList.add("active");
+const titles={dashboard:"Dashboard",documents:"Document Repository",upload:"Upload Documents",users:"User Management",activity:"Audit Activity",settings:"Settings"};
+document.getElementById("pageTitle").textContent=titles[page]||"Dashboard";
+if(page==="dashboard"){loadDocuments();loadDashboardActivity()}
+if(page==="documents"){loadFolders();loadDocuments()}
+if(page==="upload")loadFolders();
+if(page==="users")loadUsers();
+if(page==="activity")loadActivity();
+}
+
+function notify(message){
+const toast=document.getElementById("toast");toast.textContent=message;toast.style.display="block";
+setTimeout(()=>toast.style.display="none",3000);
+}
+
+async function api(url,options={}){
+const response=await fetch(url,{...options,credentials:"same-origin"});
+if(!response.ok){let message="Request failed.";try{const data=await response.json();message=data.error||data.message||message}catch{message=response.statusText||message}throw new Error(message)}
+const contentType=response.headers.get("content-type")||"";
+return contentType.includes("application/json")?response.json():null;
+}
+
+function folderPath(id){
+const byId=new Map(folders.map(f=>[f.id,f]));
+const names=[],seen=new Set();
+let current=byId.get(Number(id));
+while(current&&!seen.has(current.id)){
+seen.add(current.id);names.unshift(current.name);
+current=(current.parent_id!==null&&current.parent_id!==undefined)?byId.get(current.parent_id):null;
+}
+return names.join(" / ");
+}
+
+function sortedFolderOptions(){
+return folders.map(f=>({id:f.id,label:folderPath(f.id)||f.name})).sort((a,b)=>a.label.localeCompare(b.label));
+}
+
+function folderLabel(doc){
+const folderId=getDocumentFolderId(doc);
+if(folderId!==""){const path=folderPath(folderId);if(path)return path}
+return doc.folder||"Unassigned";
+}
+
+function todayISO(){
+const now=new Date();
+return now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+}
+
+function formatTime(value){
+if(!value)return "-";
+let text=String(value);
+if(!/(Z|[+-]\d\d:?\d\d)$/i.test(text))text+="Z";
+const parsed=new Date(text);
+return isNaN(parsed.getTime())?String(value):parsed.toLocaleString();
+}
+
+function localDay(value){
+if(!value)return "";
+let text=String(value);
+if(!/(Z|[+-]\d\d:?\d\d)$/i.test(text))text+="Z";
+const parsed=new Date(text);
+return isNaN(parsed.getTime())?"":parsed.getFullYear()+"-"+String(parsed.getMonth()+1).padStart(2,"0")+"-"+String(parsed.getDate()).padStart(2,"0");
+}
+
+function canEdit(doc){
+if(typeof doc.can_edit==="boolean")return doc.can_edit;
+return isAdmin||(doc.created_by||doc.uploaded_by||"")===currentUsername;
+}
+
+async function loadFolders(){
+try{
+const data=await api("/api/folders");folders=Array.isArray(data)?data:(data.folders||[]);
+populateFolderFilter();populateUploadFolder();renderDocuments();updateDashboard();
+}catch(error){console.error("Folder loading error:",error);notify("Unable to load folders: "+error.message)}
+}
+
+function populateFolderFilter(){
+const select=document.getElementById("folderFilter");if(!select)return;
+const previous=select.value;
+select.innerHTML='<option value="">All Folders</option>'+sortedFolderOptions().map(f=>`<option value="${escapeHTML(String(f.id))}">${escapeHTML(f.label)}</option>`).join("");
+if(folders.some(f=>String(f.id)===previous))select.value=previous;
+}
+
+function populateUploadFolder(){
+const select=document.getElementById("uploadFolder");if(!select)return;
+const previous=select.value;
+select.innerHTML='<option value="">Unassigned</option>'+sortedFolderOptions().map(f=>`<option value="${escapeHTML(String(f.id))}">${escapeHTML(f.label)}</option>`).join("");
+if(folders.some(f=>String(f.id)===previous))select.value=previous;
+}
+
+function populateDepartmentFilter(){
+const select=document.getElementById("departmentFilter");if(!select)return;
+const previous=select.value;
+const departments=[...new Set(documents.map(d=>(d.department||"General").trim()).filter(Boolean))].sort();
+select.innerHTML='<option value="">All Departments</option>'+departments.map(d=>`<option value="${escapeHTML(d)}">${escapeHTML(d)}</option>`).join("");
+if(departments.includes(previous))select.value=previous;
+}
+
+function getDocumentFolderId(doc){
+if(doc.folder_id!==undefined&&doc.folder_id!==null)return String(doc.folder_id);
+const matchingFolder=folders.find(f=>f.name===doc.folder);
+return matchingFolder?String(matchingFolder.id):"";
+}
+
+async function loadDocuments(){
+try{
+const data=await api("/api/documents");documents=Array.isArray(data)?data:(data.documents||[]);
+populateDepartmentFilter();renderDocuments();updateDashboard();
+}catch(error){console.error(error);notify("Unable to load documents: "+error.message)}
+}
+
+function renderDocuments(){
+const tbody=document.getElementById("documentTable");if(!tbody)return;
+const search=(document.getElementById("documentSearch")?.value||"").trim().toLowerCase();
+const folderFilter=document.getElementById("folderFilter")?.value||"";
+const statusFilter=(document.getElementById("statusFilter")?.value||"").toLowerCase();
+const departmentFilter=(document.getElementById("departmentFilter")?.value||"").toLowerCase();
+const typeFilter=(document.getElementById("typeFilter")?.value||"").toLowerCase();
+const dateFrom=document.getElementById("dateFrom")?.value||"",dateTo=document.getElementById("dateTo")?.value||"";
+
+const filtered=documents.filter(doc=>{
+const name=doc.name||"",folder=folderLabel(doc),department=doc.department||"General",description=doc.description||"",reference=doc.reference_number||"",type=doc.document_type||((name.split(".").pop()||"").toUpperCase()),status=doc.status||"Draft";
+const matchesSearch=[name,folder,department,description,reference,type,status].some(value=>String(value).toLowerCase().includes(search));
+const matchesFolder=!folderFilter||getDocumentFolderId(doc)===folderFilter;
+const matchesStatus=!statusFilter||status.toLowerCase()===statusFilter;
+const matchesDepartment=!departmentFilter||department.toLowerCase()===departmentFilter;
+const matchesType=!typeFilter||type.toLowerCase()===typeFilter;
+const docDay=localDay(doc.created_at);
+const matchesDate=(!dateFrom||(docDay&&docDay>=dateFrom))&&(!dateTo||(docDay&&docDay<=dateTo));
+return matchesSearch&&matchesFolder&&matchesStatus&&matchesDepartment&&matchesType&&matchesDate;
+});
+
+document.getElementById("resultCount").textContent=`Showing ${filtered.length} of ${documents.length} documents`;
+if(!filtered.length){tbody.innerHTML='<tr><td colspan="6" class="empty">No documents match your filters.</td></tr>';return}
+
+const folderOptions=sortedFolderOptions();
+const today=todayISO();
+
+tbody.innerHTML=filtered.map(doc=>{
+const id=escapeHTML(String(doc.id)),name=escapeHTML(doc.name||"Document"),folder=escapeHTML(folderLabel(doc)),uploadedBy=escapeHTML(doc.created_by||doc.uploaded_by||"System"),status=escapeHTML(doc.status||"Draft"),version=escapeHTML(String(doc.latest_version??1)),legalHold=doc.legal_hold===true,selectedFolderId=getDocumentFolderId(doc);
+const statusLower=String(doc.status||"Draft").toLowerCase();
+const statusClass=["pending","draft","archived"].includes(statusLower)?statusLower:"";
+const retention=doc.retention_date||"",retained=retention!==""&&retention>today;
+const deleteBlocked=legalHold||retained;
+const deleteTitle=legalHold?"Document is under legal hold":(retained?"Retained until "+retention:"");
+const editable=canEdit(doc);
+const options=`<option value="" ${selectedFolderId===""?"selected":""}>Unassigned</option>`+folderOptions.map(f=>`<option value="${escapeHTML(String(f.id))}" ${selectedFolderId===String(f.id)?"selected":""}>${escapeHTML(f.label)}</option>`).join("");
+return `<tr><td data-label="Document">${name}</td><td data-label="Folder">${folder}</td><td data-label="Uploaded By">${uploadedBy}</td><td data-label="Version">v${version}</td><td data-label="Status"><div><span class="status ${statusClass}">${status}</span>${legalHold?'<span class="hold-badge">Legal Hold</span>':""}${retention?`<div class="retain-note">Retain until ${escapeHTML(retention)}</div>`:""}</div></td><td class="actions-cell" data-label="Actions"><div class="actions">
+<button class="primary" onclick="previewDocument('${id}')">Preview</button>
+<button class="success" onclick="downloadDocument('${id}')">Download</button>
+<button class="history-btn" onclick="openHistory('${id}')">History</button>
+${(editable&&statusLower==="draft")?`<button class="hold-btn" onclick="submitForApproval('${id}')">Submit for Approval</button>`:""}
+${(isAdmin&&statusLower==="pending")?`<button class="success" onclick="approveDocument('${id}')">Approve</button>`:""}
+${(isAdmin&&statusLower==="pending")?`<button class="danger" onclick="rejectDocument('${id}')">Reject</button>`:""}
+${editable?`<button class="secondary" onclick="openEdit('${id}')">Edit</button>`:""}
+${editable?`<button class="secondary" onclick="openActivity('${id}')">Activity</button>`:""}
+${editable?`<select class="folder-select" id="folderSelect-${id}">${options}</select>
+<button class="primary" onclick="moveDocument('${id}')">Move</button>`:""}
+${isAdmin?`<button class="hold-btn" onclick="toggleLegalHold('${id}',${legalHold?"false":"true"})">${legalHold?"Release Hold":"Legal Hold"}</button>`:""}
+${isAdmin?`<button class="danger" ${deleteBlocked?`disabled title="${escapeHTML(deleteTitle)}"`:""} onclick="deleteDocument('${id}')">Delete</button>`:""}
+</div></td></tr>`;
+}).join("");
+}
+
+function savedKey(){return "edms_saved_searches_"+currentUsername}
+function getSavedSearches(){try{return JSON.parse(localStorage.getItem(savedKey())||"[]")}catch(e){return []}}
+function setSavedSearches(list){try{localStorage.setItem(savedKey(),JSON.stringify(list))}catch(e){notify("Cannot save in this browser.")}}
+function renderSavedSearches(){
+const select=document.getElementById("savedSearchSelect");if(!select)return;
+select.innerHTML='<option value="">Saved searches...</option>'+getSavedSearches().map((s,i)=>`<option value="${i}">${escapeHTML(s.name)}</option>`).join("");
+}
+function saveCurrentSearch(){
+const name=(prompt("Name for this search:")||"").trim();if(!name)return;
+const ids=["documentSearch","folderFilter","statusFilter","departmentFilter","typeFilter","dateFrom","dateTo"];
+const values={};ids.forEach(id=>{values[id]=document.getElementById(id).value});
+const list=getSavedSearches().filter(s=>s.name.toLowerCase()!==name.toLowerCase());
+list.push({name:name.slice(0,40),values:values});
+setSavedSearches(list);renderSavedSearches();
+document.getElementById("savedSearchSelect").value=String(list.length-1);
+notify("Search saved.");
+}
+function applySavedSearch(){
+const select=document.getElementById("savedSearchSelect");if(select.value==="")return;
+const item=getSavedSearches()[Number(select.value)];if(!item)return;
+Object.keys(item.values).forEach(id=>{const el=document.getElementById(id);if(el)el.value=item.values[id]});
+renderDocuments();
+}
+function deleteSavedSearch(){
+const select=document.getElementById("savedSearchSelect");
+if(select.value===""){notify("Pick a saved search first.");return}
+if(!confirm("Delete this saved search?"))return;
+const list=getSavedSearches();list.splice(Number(select.value),1);
+setSavedSearches(list);renderSavedSearches();
+}
+
+function clearFilters(){
+document.getElementById("documentSearch").value="";
+document.getElementById("folderFilter").value="";
+document.getElementById("statusFilter").value="";
+document.getElementById("departmentFilter").value="";
+document.getElementById("typeFilter").value="";
+document.getElementById("dateFrom").value="";
+document.getElementById("dateTo").value="";
+const ss=document.getElementById("savedSearchSelect");if(ss)ss.value="";
+renderDocuments();
+}
+
+async function submitForApproval(documentId){
+if(!confirm("Submit this document for approval?"))return;
+try{
+const result=await api(`/api/documents/${encodeURIComponent(documentId)}/submit`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
+notify((result&&(result.message||result.status))||"Submitted for approval.");await loadDocuments();
+}catch(error){console.error(error);notify("Unable to submit: "+error.message)}
+}
+
+async function approveDocument(documentId){
+if(!isAdmin)return;
+if(!confirm("Approve this document? It will become Active."))return;
+try{
+const result=await api(`/api/documents/${encodeURIComponent(documentId)}/approve`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
+notify((result&&(result.message||result.status))||"Document approved.");await loadDocuments();
+}catch(error){console.error(error);notify("Unable to approve: "+error.message)}
+}
+
+async function rejectDocument(documentId){
+if(!isAdmin)return;
+const reason=prompt("Reason for rejection (optional):");
+if(reason===null)return;
+try{
+const result=await api(`/api/documents/${encodeURIComponent(documentId)}/reject`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason:reason.trim()})});
+notify((result&&(result.message||result.status))||"Document rejected.");await loadDocuments();
+}catch(error){console.error(error);notify("Unable to reject: "+error.message)}
+}
+
+async function moveDocument(documentId){
+const select=document.getElementById(`folderSelect-${documentId}`);if(!select)return;
+const folderId=select.value===""?null:Number(select.value);
+const button=select.parentElement.querySelector("button[onclick^='moveDocument']");
+if(button){button.disabled=true;button.textContent="Moving..."}
+try{
+const result=await api(`/api/documents/${encodeURIComponent(documentId)}/folder`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({folder_id:folderId})});
+notify(result.message||"Document moved successfully.");await loadFolders();await loadDocuments();
+}catch(error){console.error(error);notify("Unable to move document: "+error.message)}
+finally{if(button){button.disabled=false;button.textContent="Move"}}
+}
+
+async function toggleLegalHold(documentId,place){
+if(!isAdmin)return;
+const question=place?"Place this document under legal hold? It cannot be deleted until the hold is released.":"Release the legal hold on this document?";
+if(!confirm(question))return;
+try{
+const result=await api(`/api/documents/${encodeURIComponent(documentId)}/legal-hold`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({legal_hold:place})});
+notify(result.message||"Legal hold updated.");await loadDocuments();
+}catch(error){console.error(error);notify("Unable to update legal hold: "+error.message)}
+}
+
+function openEdit(documentId){
+const doc=documents.find(d=>String(d.id)===String(documentId));if(!doc)return;
+editingDocumentId=documentId;
+document.getElementById("editDocumentName").textContent=doc.name||"";
+document.getElementById("editDepartment").value=doc.department||"General";
+document.getElementById("editReference").value=doc.reference_number||"";
+const statusSelect=document.getElementById("editStatus");
+const currentStatus=doc.status||"Draft";
+if(![...statusSelect.options].some(o=>o.value===currentStatus)){const extra=document.createElement("option");extra.value=currentStatus;extra.textContent=currentStatus;statusSelect.appendChild(extra)}
+statusSelect.value=currentStatus;
+document.getElementById("editRetention").value=doc.retention_date||"";
+document.getElementById("editDescription").value=doc.description||"";
+document.getElementById("editModal").classList.add("show");
+}
+
+function closeEdit(){
+document.getElementById("editModal").classList.remove("show");
+editingDocumentId=null;
+}
+
+document.getElementById("editForm").addEventListener("submit",async function(event){
+event.preventDefault();if(!editingDocumentId)return;
+const payload={
+department:document.getElementById("editDepartment").value.trim(),
+reference_number:document.getElementById("editReference").value.trim(),
+status:document.getElementById("editStatus").value,
+retention_date:document.getElementById("editRetention").value,
+description:document.getElementById("editDescription").value.trim()
+};
+const button=document.getElementById("editSaveButton");button.disabled=true;button.textContent="Saving...";
+try{
+const result=await api(`/api/documents/${encodeURIComponent(editingDocumentId)}/metadata`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+notify(result.message||"Document details updated.");closeEdit();await loadDocuments();
+}catch(error){console.error(error);notify("Unable to save changes: "+error.message)}
+finally{button.disabled=false;button.textContent="Save Changes"}
+});
+
+async function openActivity(documentId){
+const doc=documents.find(d=>String(d.id)===String(documentId));
+document.getElementById("activityDocumentName").textContent=doc?doc.name:"";
+const tbody=document.getElementById("docActivityTable");
+tbody.innerHTML='<tr><td colspan="4" class="empty">Loading activity...</td></tr>';
+document.getElementById("activityModal").classList.add("show");
+try{
+const data=await api(`/api/documents/${encodeURIComponent(documentId)}/activity`);
+const logs=Array.isArray(data)?data:[];
+tbody.innerHTML=logs.length?logs.map(log=>`<tr><td class="nowrap">${escapeHTML(formatTime(log.timestamp))}</td><td>${escapeHTML(log.user||"-")}</td><td>${escapeHTML(log.action||"-")}</td><td>${escapeHTML(log.detail||"-")}</td></tr>`).join(""):'<tr><td colspan="4" class="empty">No activity recorded for this document.</td></tr>';
+}catch(error){
+console.error(error);
+tbody.innerHTML='<tr><td colspan="4" class="empty">Unable to load activity.</td></tr>';
+notify("Unable to load activity: "+error.message);
+}
+}
+
+function closeActivity(){
+document.getElementById("activityModal").classList.remove("show");
+}
+
+function countBy(items,labelFn){
+const map=new Map();
+items.forEach(item=>{
+const label=String(labelFn(item)||"").trim()||"Unknown";
+const key=label.toLowerCase();
+if(!map.has(key))map.set(key,{label,count:0});
+map.get(key).count+=1;
+});
+return [...map.values()].sort((a,b)=>b.count-a.count||a.label.localeCompare(b.label));
+}
+
+function renderBars(containerId,entries,color){
+const el=document.getElementById(containerId);if(!el)return;
+if(!entries.length){el.innerHTML='<div class="empty">No documents yet.</div>';return}
+const max=Math.max(...entries.map(e=>e.count));
+const shown=entries.slice(0,6);
+let html=shown.map(e=>`<div class="bar-row"><div class="bar-label" title="${escapeHTML(e.label)}">${escapeHTML(e.label)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.max(4,Math.round(e.count/max*100))}%;background:${color}"></div></div><div class="bar-count">${e.count}</div></div>`).join("");
+if(entries.length>shown.length)html+=`<div class="more-note">+ ${entries.length-shown.length} more not shown</div>`;
+el.innerHTML=html;
+}
+
+function renderRetention(){
+const el=document.getElementById("retentionList");if(!el)return;
+const today=new Date();today.setHours(0,0,0,0);
+const todayText=todayISO();
+const retainedNow=documents.filter(d=>d.retention_date&&d.retention_date>todayText).length;
+const upcoming=documents
+.filter(d=>d.retention_date)
+.map(d=>({doc:d,days:Math.round((new Date(d.retention_date+"T00:00:00")-today)/86400000)}))
+.filter(x=>!isNaN(x.days)&&x.days>=0&&x.days<=90)
+.sort((a,b)=>a.days-b.days);
+let html=`<div class="ret-summary">${retainedNow} document${retainedNow===1?"":"s"} currently protected by a retention date.</div>`;
+if(!upcoming.length){el.innerHTML=html+'<div class="empty">No retention dates in the next 90 days.</div>';return}
+html+=upcoming.slice(0,5).map(x=>{
+const label=x.days===0?"today":(x.days===1?"in 1 day":`in ${x.days} days`);
+return `<div class="ret-item"><div class="ret-name" title="${escapeHTML(x.doc.name||"")}">${escapeHTML(x.doc.name||"Document")}</div><span class="ret-due ${x.days<=14?"soon":""}">${escapeHTML(x.doc.retention_date)} · ${label}</span></div>`;
+}).join("");
+if(upcoming.length>5)html+=`<div class="more-note">+ ${upcoming.length-5} more in the next 90 days</div>`;
+el.innerHTML=html;
+}
+
+function renderAnalytics(){
+renderBars("chartStatus",countBy(documents,d=>d.status||"Draft"),"#2563eb");
+renderBars("chartDepartment",countBy(documents,d=>d.department||"General"),"#16a34a");
+renderBars("chartType",countBy(documents,d=>d.document_type||((d.name||"").split(".").pop()||"").toUpperCase()),"#9333ea");
+renderRetention();
+}
+
+async function loadDashboardActivity(){
+if(!isAdmin)return;
+const tbody=document.getElementById("dashActivity");if(!tbody)return;
+try{
+const data=await api("/api/audit");
+const logs=(Array.isArray(data)?data:(data.logs||data.audit_logs||[])).slice(0,6);
+tbody.innerHTML=logs.length?logs.map(log=>{
+const detail=String(log.detail||"-"),short=detail.length>70?detail.slice(0,67)+"...":detail;
+return `<tr><td class="nowrap">${escapeHTML(formatTime(log.timestamp))}</td><td>${escapeHTML(log.user||"-")}</td><td>${escapeHTML(log.action||"-")}</td><td title="${escapeHTML(detail)}">${escapeHTML(short)}</td></tr>`;
+}).join(""):'<tr><td colspan="4" class="empty">No activity yet.</td></tr>';
+}catch(error){
+console.error(error);
+tbody.innerHTML='<tr><td colspan="4" class="empty">Unable to load activity.</td></tr>';
+}
+}
+
+function updateDashboard(){
+document.getElementById("totalDocuments").textContent=documents.length;
+document.getElementById("activeDocuments").textContent=documents.filter(d=>(d.status||"Draft").toLowerCase()==="active").length;
+document.getElementById("legalHold").textContent=documents.filter(d=>d.legal_hold===true).length;
+const recent=documents.slice(0,5);
+document.getElementById("recentDocuments").innerHTML=recent.length?recent.map(d=>`<tr><td>${escapeHTML(d.name||"Document")}</td><td>${escapeHTML(folderLabel(d))}</td><td>${escapeHTML(d.created_by||d.uploaded_by||"System")}</td><td>${escapeHTML(d.status||"Draft")}</td><td>v${escapeHTML(String(d.latest_version??1))}</td></tr>`).join(""):'<tr><td colspan="5" class="empty">No documents available.</td></tr>';
+renderAnalytics();
+}
+
+const dropZone=document.getElementById("dropZone"),documentFile=document.getElementById("documentFile"),selectedFile=document.getElementById("selectedFile");
+const allowedExtensions=["pdf","doc","docx","xls","xlsx","txt","png","jpg","jpeg","tif","tiff"];
+function displaySelectedFile(file){selectedFile.textContent=file?"✓ Selected: "+file.name+" ("+formatSize(file.size)+")":"No file selected"}
+function isAllowedFile(file){return allowedExtensions.includes(file.name.split(".").pop().toLowerCase())}
+documentFile.addEventListener("change",function(){const file=this.files[0];if(!file){displaySelectedFile(null);return}if(!isAllowedFile(file)){this.value="";displaySelectedFile(null);notify("This file type is not supported.");return}displaySelectedFile(file)});
+["dragenter","dragover"].forEach(name=>dropZone.addEventListener(name,e=>{e.preventDefault();e.stopPropagation();dropZone.classList.add("drag-over")}));
+["dragleave","drop"].forEach(name=>dropZone.addEventListener(name,e=>{e.preventDefault();e.stopPropagation();dropZone.classList.remove("drag-over")}));
+dropZone.addEventListener("drop",e=>{const files=e.dataTransfer.files;if(!files.length)return;const file=files[0];if(!isAllowedFile(file)){notify("This file type is not supported.");return}documentFile.files=files;displaySelectedFile(file)});
+
+document.getElementById("uploadForm").addEventListener("submit",async function(event){
+event.preventDefault();const file=documentFile.files[0];if(!file){notify("Please select or drop a document first.");return}if(!isAllowedFile(file)){notify("This file type is not supported.");return}
+const formData=new FormData();formData.append("file",file);
+const uploadFolderValue=document.getElementById("uploadFolder")?.value||"";
+if(uploadFolderValue!=="")formData.append("folder_id",uploadFolderValue);
+const button=document.getElementById("uploadButton");button.disabled=true;button.textContent="Uploading...";
+try{
+const response=await fetch("/api/documents/upload",{method:"POST",body:formData,credentials:"same-origin"});let result={};try{result=await response.json()}catch{}if(!response.ok)throw new Error(result.error||result.message||"Upload failed.");
+notify(result.message||"Document uploaded successfully!");this.reset();displaySelectedFile(null);await loadDocuments();showPage("documents");
+}catch(error){console.error(error);notify(error.message)}
+finally{button.disabled=false;button.textContent="Upload Document"}
+});
+
+function previewDocument(id){document.getElementById("previewFrame").src=`/api/documents/${encodeURIComponent(id)}/preview`;document.getElementById("previewModal").classList.add("show")}
+function closePreview(){document.getElementById("previewModal").classList.remove("show");document.getElementById("previewFrame").src="about:blank"}
+function downloadDocument(id){const link=document.createElement("a");link.href=`/api/documents/${encodeURIComponent(id)}/download`;link.style.display="none";document.body.appendChild(link);link.click();link.remove()}
+
+async function openHistory(documentId){
+currentHistoryDocumentId=documentId;
+const doc=documents.find(d=>String(d.id)===String(documentId));
+document.getElementById("versionUploadBox").style.display=(!doc||canEdit(doc))?"block":"none";
+document.getElementById("historyModal").classList.add("show");document.getElementById("historyDocumentName").textContent="Loading document history...";
+document.getElementById("versionTable").innerHTML='<tr><td colspan="5" class="empty">Loading versions...</td></tr>';await loadVersionHistory(documentId);
+}
+
+async function loadVersionHistory(documentId){
+try{
+const data=await api(`/api/documents/${encodeURIComponent(documentId)}/versions`);document.getElementById("historyDocumentName").textContent=data.document_name||"Document";
+const versions=data.versions||[],tbody=document.getElementById("versionTable");
+if(!versions.length){tbody.innerHTML='<tr><td colspan="5" class="empty">No versions available.</td></tr>';return}
+tbody.innerHTML=versions.map(v=>{const date=formatTime(v.uploaded_at),number=Number(v.version_number);return `<tr><td><strong>v${number}</strong></td><td>${escapeHTML(v.uploaded_by||"System")}</td><td>${escapeHTML(date)}</td><td>${formatSize(v.size)}</td><td><button class="success" onclick="downloadOldVersion('${encodeURIComponent(documentId)}',${number})">Download</button></td></tr>`}).join("");
+}catch(error){console.error(error);document.getElementById("versionTable").innerHTML='<tr><td colspan="5" class="empty">Unable to load version history.</td></tr>';notify(error.message)}
+}
+
+document.getElementById("versionUploadForm").addEventListener("submit",async function(event){
+event.preventDefault();if(!currentHistoryDocumentId){notify("No document selected.");return}
+const file=document.getElementById("versionFile").files[0];if(!file){notify("Please select a file.");return}
+const formData=new FormData();formData.append("file",file);const button=document.getElementById("versionUploadButton");button.disabled=true;button.textContent="Uploading...";
+try{
+const response=await fetch(`/api/documents/${encodeURIComponent(currentHistoryDocumentId)}/versions`,{method:"POST",body:formData,credentials:"same-origin"});let result={};try{result=await response.json()}catch{}if(!response.ok)throw new Error(result.error||"Version upload failed.");
+notify(result.message||"New version uploaded successfully.");this.reset();await loadVersionHistory(currentHistoryDocumentId);await loadDocuments();
+}catch(error){console.error(error);notify(error.message)}
+finally{button.disabled=false;button.textContent="Upload New Version"}
+});
+
+function downloadOldVersion(documentId,versionNumber){const link=document.createElement("a");link.href=`/api/documents/${documentId}/versions/${versionNumber}/download`;link.style.display="none";document.body.appendChild(link);link.click();link.remove()}
+function closeHistory(){document.getElementById("historyModal").classList.remove("show");currentHistoryDocumentId=null;document.getElementById("versionFile").value=""}
+function formatSize(bytes){const size=Number(bytes||0);if(size<1024)return size+" B";if(size<1024*1024)return(size/1024).toFixed(1)+" KB";return(size/(1024*1024)).toFixed(2)+" MB"}
+
+async function deleteDocument(id){
+if(!isAdmin)return;if(!confirm("Are you sure you want to delete this document?"))return;
+try{await api(`/api/documents/${encodeURIComponent(id)}`,{method:"DELETE"});notify("Document deleted successfully.");await loadDocuments();await loadFolders()}
+catch(error){console.error(error);notify(error.message)}
+}
+
+async function loadUsers(){
+if(!isAdmin)return;
+try{
+const data=await api("/api/users");users=Array.isArray(data)?data:(data.users||[]);document.getElementById("totalUsers").textContent=users.length;
+document.getElementById("userTable").innerHTML=users.map(user=>{const role=user.role||"User",id=user.id??user.user_id,active=user.is_active!==false;return `<tr><td>${escapeHTML(String(id))}</td><td>${escapeHTML(user.username||"-")}</td><td>${escapeHTML(user.email||"-")}</td><td>${escapeHTML(role)}</td><td><span class="status" style="${active?"":"background:#fee2e2;color:#b91c1c"}">${active?"Active":"Inactive"}</span></td><td><button class="primary" onclick="changeRole('${id}','${escapeHTML(role)}')">Change Role</button></td></tr>`}).join("")||'<tr><td colspan="6" class="empty">No users found.</td></tr>';
+}catch(error){console.error(error);notify("Unable to load users: "+error.message)}
+}
+
+async function changeRole(id,currentRole){
+if(!isAdmin)return;const newRole=currentRole==="Admin"?"User":"Admin";if(!confirm(`Change this user's role to ${newRole}?`))return;
+try{await api(`/api/users/${encodeURIComponent(id)}/role`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({role:newRole})});notify("User role updated.");await loadUsers()}
+catch(error){console.error(error);notify(error.message)}
+}
+
+async function loadActivity(){
+if(!isAdmin)return;
+try{
+const data=await api("/api/audit");const logs=Array.isArray(data)?data:(data.logs||data.audit_logs||[]);
+document.getElementById("activityTable").innerHTML=logs.map(log=>`<tr><td class="nowrap">${escapeHTML(formatTime(log.timestamp))}</td><td>${escapeHTML(log.user||"-")}</td><td>${escapeHTML(log.action||"-")}</td><td>${escapeHTML(String(log.document_id??"-"))}</td><td>${escapeHTML(log.detail||"-")}</td><td>${escapeHTML(log.ip_address||"-")}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No activity found.</td></tr>';
+}catch(error){console.error(error);notify("Unable to load audit activity.")}
+}
+
+function escapeHTML(value){return String(value).replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]))}
+function logout(){if(confirm("Are you sure you want to logout?")){const form=document.createElement("form");form.method="POST";form.action="/logout";document.body.appendChild(form);form.submit()}}
+
+document.getElementById("previewModal").addEventListener("click",function(e){if(e.target===this)closePreview()});
+document.getElementById("historyModal").addEventListener("click",function(e){if(e.target===this)closeHistory()});
+document.getElementById("editModal").addEventListener("click",function(e){if(e.target===this)closeEdit()});
+document.getElementById("activityModal").addEventListener("click",function(e){if(e.target===this)closeActivity()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closePreview();closeHistory();closeEdit();closeActivity();closeSidebar()}});
+
+async function initializeDashboard(){
+document.querySelectorAll(".admin-only").forEach(item=>item.style.display=isAdmin?"block":"none");
+if(!isAdmin)document.getElementById("totalUsers").textContent="Restricted";
+renderSavedSearches();
+await loadFolders();await loadDocuments();loadDashboardActivity();if(isAdmin)await loadUsers();
+}
+initializeDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EDMS | Activity Log</title>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      background: #f5f6fa;
+      color: #1b1f3b;
+    }
+
+    header {
+      background: #111a33;
+      color: #fff;
+      padding: 20px 32px;
+    }
+
+    header a {
+      color: #9fb3ff;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+    }
+
+    .bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    select, button {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #ccd;
+      font-size: 14px;
+    }
+
+    button {
+      background: #c0392b;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: wait;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: white;
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid #eee;
+      font-size: 14px;
+      overflow-wrap: anywhere;
+    }
+
+    th {
+      background: #eef0f7;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #e8ecff;
+    }
+
+    .UPLOAD {
+      background: #e0f5e9;
+    }
+
+    .DOWNLOAD {
+      background: #fff2d6;
+    }
+
+    .VIEW {
+      background: #e8ecff;
+    }
+
+    .DELETE {
+      background: #ffe4e4;
+    }
+
+    #message {
+      padding: 16px;
+      color: #667;
+    }
+
+    .error {
+      color: #b42318 !important;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h2 style="margin:0 0 4px">Activity Log</h2>
+    <a href="/">&larr; Back to Dashboard</a>
+  </header>
+
+  <main>
+    <h3>Audit history</h3>
+    <p>Recent document actions recorded by the system.</p>
+
+    <div class="bar">
+      <select id="actionFilter" aria-label="Filter by action">
+        <option value="">All actions</option>
+        <option value="UPLOAD">Upload</option>
+        <option value="VIEW">View</option>
+        <option value="DOWNLOAD">Download</option>
+        <option value="DELETE">Delete</option>
+      </select>
+
+      <button id="refreshBtn" type="button">Refresh</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Document ID</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+
+        <tbody id="rows"></tbody>
+      </table>
+
+      <div id="message">Loading activity...</div>
+    </div>
+  </main>
+
+  <script>
+    const rowsEl = document.getElementById("rows");
+    const messageEl = document.getElementById("message");
+    const filterEl = document.getElementById("actionFilter");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    function addCell(row, value) {
+      const td = document.createElement("td");
+      td.textContent = value == null ? "" : String(value);
+      row.appendChild(td);
+    }
+
+    async function loadAudit() {
+      refreshBtn.disabled = true;
+      rowsEl.replaceChildren();
+
+      messageEl.hidden = false;
+      messageEl.className = "";
+      messageEl.textContent = "Loading activity...";
+
+      try {
+        const response = await fetch("/api/audit", {
+          headers: {
+            "Accept": "application/json"
+          },
+          credentials: "same-origin"
+        });
+
+        if (response.status === 401 || response.redirected) {
+          throw new Error(
+            "Your session may have expired. Please log in again."
+          );
+        }
+
+        if (response.status === 403) {
+          throw new Error(
+            "Administrator access is required to view audit logs."
+          );
+        }
+
+        if (!response.ok) {
+          throw new Error(
+            "Could not load activity (HTTP " + response.status + ")."
+          );
+        }
+
+        const data = await response.json();
+
+        if (!Array.isArray(data)) {
+          throw new Error(
+            data.error || "Unexpected response from server."
+          );
+        }
+
+        const selectedAction = filterEl.value;
+
+        const filteredData = selectedAction
+          ? data.filter(item => item.action === selectedAction)
+          : data;
+
+        filteredData.forEach(item => {
+          const tr = document.createElement("tr");
+
+          let timestamp = item.timestamp || "";
+          if (timestamp) {
+            const parsedDate = new Date(timestamp);
+
+            if (!Number.isNaN(parsedDate.getTime())) {
+              timestamp = parsedDate.toLocaleString();
+            }
+          }
+
+          addCell(tr, timestamp);
+          addCell(tr, item.user || "System");
+
+          const actionTd = document.createElement("td");
+          const badge = document.createElement("span");
+
+          badge.className = "badge " + (item.action || "");
+          badge.textContent = item.action || "UNKNOWN";
+
+          actionTd.appendChild(badge);
+          tr.appendChild(actionTd);
+
+          addCell(tr, item.document_id || "-");
+          addCell(tr, item.detail || "");
+
+          rowsEl.appendChild(tr);
+        });
+
+        messageEl.hidden = filteredData.length > 0;
+
+        if (selectedAction) {
+          messageEl.textContent = "No records found for this action.";
+        } else {
+          messageEl.textContent = "No activity recorded yet.";
+        }
+
+      } catch (error) {
+        messageEl.hidden = false;
+        messageEl.className = "error";
+        messageEl.textContent =
+          error.message || "Failed to load activity.";
+
+      } finally {
+        refreshBtn.disabled = false;
+      }
+    }
+
+    filterEl.addEventListener("change", loadAudit);
+    refreshBtn.addEventListener("click", loadAudit);
+
+    loadAudit();
+  </script>
+</body>
+</html>

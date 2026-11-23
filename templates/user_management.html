@@ -1,0 +1,763 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EDMS - User Management</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f5fa;
+    color: #172033;
+}
+
+header {
+    background: #171d2e;
+    color: white;
+    padding: 22px 35px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    font-size: 30px;
+}
+
+header p {
+    color: #cbd5e1;
+    margin-top: 5px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.role {
+    background: #343d51;
+    padding: 10px 16px;
+    border-radius: 25px;
+}
+
+.logout {
+    background: #283247;
+    color: white;
+    padding: 12px 20px;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.layout {
+    display: flex;
+    min-height: calc(100vh - 90px);
+}
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid #dce2ec;
+    padding: 30px 18px;
+    flex-shrink: 0;
+}
+
+.sidebar h4 {
+    color: #718096;
+    margin: 15px 12px;
+    letter-spacing: 1px;
+}
+
+.sidebar a {
+    display: block;
+    text-decoration: none;
+    color: #172033;
+    padding: 15px;
+    margin: 5px 0;
+    border-radius: 9px;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+    background: #fceeea;
+    color: #c43f2c;
+}
+
+main {
+    flex: 1;
+    padding: 35px;
+    min-width: 0;
+}
+
+.card {
+    background: white;
+    padding: 28px;
+    border-radius: 15px;
+    border: 1px solid #dce3ee;
+    margin-bottom: 25px;
+}
+
+h2 {
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #718096;
+    margin-bottom: 25px;
+}
+
+button {
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.primary {
+    background: #c8412e;
+    color: white;
+}
+
+.secondary {
+    background: #e9eef6;
+    color: #172033;
+}
+
+.success {
+    background: #e5f5ec;
+    color: #16804a;
+}
+
+.warning {
+    background: #fff3dc;
+    color: #a66a00;
+}
+
+.danger {
+    background: #fdebea;
+    color: #c43f2c;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dce3ee;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+}
+
+input:focus, select:focus {
+    outline: 2px solid #e9a092;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 850px;
+}
+
+th, td {
+    padding: 16px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e5ed;
+}
+
+th {
+    background: #f8fafc;
+    color: #718096;
+}
+
+td button {
+    margin: 3px;
+}
+
+.actions {
+    min-width: 270px;
+}
+
+.message {
+    margin: 15px 0;
+    padding: 12px;
+    border-radius: 8px;
+    display: none;
+}
+
+.message.error {
+    display: block;
+    background: #fdebea;
+    color: #b42318;
+}
+
+.message.success-message {
+    display: block;
+    background: #e5f5ec;
+    color: #16804a;
+}
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.active {
+    background: #e5f5ec;
+    color: #16804a;
+}
+
+.inactive {
+    background: #fdebea;
+    color: #c43f2c;
+}
+
+@media(max-width: 800px) {
+    .layout {
+        display: block;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+
+    main {
+        padding: 18px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    header {
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <div>
+        <h1>EDMS<span style="color:#c8412e">.</span></h1>
+        <p>Enterprise Document Management System</p>
+    </div>
+
+    <div class="header-right">
+        <span>Development Environment</span>
+        <span class="role">Administrator</span>
+
+        <form action="/logout" method="POST">
+            <button class="logout" type="submit">Log out</button>
+        </form>
+    </div>
+</header>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <h4>WORKSPACE</h4>
+
+        <a href="/">Dashboard</a>
+        <a href="/">Documents</a>
+        <a href="/">Approvals</a>
+        <a href="/">Activity Log</a>
+
+        <h4>ADMINISTRATION</h4>
+
+        <a href="/">Settings</a>
+        <a href="/admin/users" class="active">
+            User Management
+        </a>
+    </aside>
+
+    <main>
+
+        <!-- USER MANAGEMENT -->
+
+        <section class="card">
+
+            <h2>User Management</h2>
+
+            <p class="subtitle">
+                Manage user accounts, permissions and security.
+            </p>
+
+            <button class="secondary" onclick="loadUsers()">
+                Refresh Users
+            </button>
+
+            <div id="message" class="message"></div>
+
+            <div class="table-wrapper" style="margin-top:25px">
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Account</th>
+                            <th class="actions">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="usersTable">
+                        <tr>
+                            <td colspan="6">Loading users...</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </section>
+
+
+        <!-- CREATE USER -->
+
+        <section class="card">
+
+            <h2>Create New User</h2>
+
+            <p class="subtitle">
+                Add a new employee or administrator account.
+            </p>
+
+            <form id="createUserForm">
+
+                <div class="form-grid">
+
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input
+                            type="text"
+                            id="username"
+                            required
+                            maxlength="80"
+                            placeholder="Enter username">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email Address</label>
+                        <input
+                            type="email"
+                            id="email"
+                            required
+                            maxlength="255"
+                            placeholder="Enter email">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            required
+                            minlength="12"
+                            placeholder="Minimum 12 characters">
+                    </div>
+
+                    <div class="form-group">
+                        <label>User Role</label>
+                        <select id="newRole">
+                            <option value="User">Standard User</option>
+                            <option value="Admin">Administrator</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <button class="primary" type="submit">
+                    + Create User
+                </button>
+
+            </form>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script>
+"use strict";
+
+const API = "/api/users";
+
+const table = document.getElementById("usersTable");
+const message = document.getElementById("message");
+
+
+function showMessage(text, success = true) {
+
+    message.textContent = text;
+
+    message.className = success
+        ? "message success-message"
+        : "message error";
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+async function apiRequest(url, options = {}) {
+
+    const response = await fetch(url, {
+        credentials: "same-origin",
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            ...(options.headers || {})
+        }
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(
+            data.error || data.message || "Request failed."
+        );
+    }
+
+    return data;
+}
+
+
+// LOAD USERS
+
+async function loadUsers() {
+
+    table.innerHTML =
+        '<tr><td colspan="6">Loading users...</td></tr>';
+
+    try {
+
+        const users = await apiRequest(API);
+
+        table.innerHTML = "";
+
+        if (!users.length) {
+            table.innerHTML =
+                '<tr><td colspan="6">No users found.</td></tr>';
+            return;
+        }
+
+        users.forEach(user => {
+
+            const row = document.createElement("tr");
+
+            const id = document.createElement("td");
+            id.textContent = user.id;
+
+            const username = document.createElement("td");
+            username.textContent = user.username;
+
+            const email = document.createElement("td");
+            email.textContent = user.email;
+
+            const role = document.createElement("td");
+            role.textContent = user.role;
+
+            const account = document.createElement("td");
+
+            const badge = document.createElement("span");
+
+            badge.className = user.is_active
+                ? "badge active"
+                : "badge inactive";
+
+            badge.textContent = user.is_active
+                ? "Active"
+                : "Inactive";
+
+            account.appendChild(badge);
+
+            const actions = document.createElement("td");
+            actions.className = "actions";
+
+            const editButton = document.createElement("button");
+            editButton.className = "secondary";
+            editButton.textContent = "Edit";
+            editButton.addEventListener("click", () => editUser(user));
+
+            const roleButton = document.createElement("button");
+            roleButton.className = "warning";
+            roleButton.textContent = "Change Role";
+            roleButton.addEventListener("click", () => changeRole(user));
+
+            const statusButton = document.createElement("button");
+            statusButton.className = user.is_active
+                ? "danger"
+                : "success";
+
+            statusButton.textContent = user.is_active
+                ? "Deactivate"
+                : "Activate";
+
+            statusButton.addEventListener(
+                "click",
+                () => changeStatus(user)
+            );
+
+            const passwordButton = document.createElement("button");
+            passwordButton.className = "secondary";
+            passwordButton.textContent = "Reset Password";
+
+            passwordButton.addEventListener(
+                "click",
+                () => resetPassword(user)
+            );
+
+            actions.append(
+                editButton,
+                roleButton,
+                statusButton,
+                passwordButton
+            );
+
+            row.append(
+                id,
+                username,
+                email,
+                role,
+                account,
+                actions
+            );
+
+            table.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        table.innerHTML =
+            '<tr><td colspan="6">Unable to load users.</td></tr>';
+
+        showMessage(error.message, false);
+    }
+}
+
+
+// CREATE USER
+
+document.getElementById("createUserForm")
+.addEventListener("submit", async function(event) {
+
+    event.preventDefault();
+
+    const user = {
+        username: document.getElementById("username").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        password: document.getElementById("password").value,
+        role: document.getElementById("newRole").value
+    };
+
+    try {
+
+        await apiRequest(API, {
+            method: "POST",
+            body: JSON.stringify(user)
+        });
+
+        this.reset();
+
+        showMessage("User created successfully!");
+
+        loadUsers();
+
+    } catch (error) {
+
+        showMessage(error.message, false);
+    }
+
+});
+
+
+// EDIT USER
+
+async function editUser(user) {
+
+    const username = prompt(
+        "Enter new username:",
+        user.username
+    );
+
+    if (username === null) return;
+
+    const email = prompt(
+        "Enter new email:",
+        user.email
+    );
+
+    if (email === null) return;
+
+    try {
+
+        await apiRequest(`${API}/${user.id}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                username: username,
+                email: email
+            })
+        });
+
+        showMessage("User details updated successfully!");
+
+        loadUsers();
+
+    } catch (error) {
+
+        showMessage(error.message, false);
+    }
+}
+
+
+// CHANGE ROLE
+
+async function changeRole(user) {
+
+    const newRole = prompt(
+        "Enter role: Admin or User",
+        user.role
+    );
+
+    if (newRole === null) return;
+
+    if (!["Admin", "User"].includes(newRole)) {
+        showMessage("Please enter Admin or User.", false);
+        return;
+    }
+
+    try {
+
+        await apiRequest(`${API}/${user.id}/role`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                role: newRole
+            })
+        });
+
+        showMessage("User role updated successfully!");
+
+        loadUsers();
+
+    } catch (error) {
+
+        showMessage(error.message, false);
+    }
+}
+
+
+// ACTIVATE / DEACTIVATE
+
+async function changeStatus(user) {
+
+    const action = user.is_active
+        ? "deactivate"
+        : "activate";
+
+    if (!confirm(`Are you sure you want to ${action} this user?`)) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(`${API}/${user.id}/status`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                is_active: !user.is_active
+            })
+        });
+
+        showMessage("Account status updated successfully!");
+
+        loadUsers();
+
+    } catch (error) {
+
+        showMessage(error.message, false);
+    }
+}
+
+
+// RESET PASSWORD
+
+async function resetPassword(user) {
+
+    const password = prompt(
+        "Enter new password (minimum 12 characters):"
+    );
+
+    if (password === null) return;
+
+    if (password.length < 12) {
+        showMessage(
+            "Password must contain at least 12 characters.",
+            false
+        );
+        return;
+    }
+
+    if (!confirm("Confirm password reset for " + user.username + "?")) {
+        return;
+    }
+
+    try {
+
+        await apiRequest(`${API}/${user.id}/password`, {
+            method: "PATCH",
+            body: JSON.stringify({
+                password: password
+            })
+        });
+
+        showMessage("Password reset successfully!");
+
+    } catch (error) {
+
+        showMessage(error.message, false);
+    }
+}
+
+
+// INITIAL LOAD
+
+loadUsers();
+
+</script>
+
+</body>
+</html>

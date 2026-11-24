@@ -43,6 +43,7 @@
             cursor: pointer;
         }
         .error { color: #b42318; }
+        .success { color: #067647; }
     </style>
 </head>
 <body>
@@ -51,7 +52,7 @@
         <p>Sign in to your document workspace.</p>
 
         {% for category, message in get_flashed_messages(with_categories=true) %}
-            <p class="error">{{ message }}</p>
+            <p class="{{ 'success' if category == 'success' else 'error' }}">{{ message }}</p>
         {% endfor %}
 
         <form method="post">

@@ -1,4 +1,4 @@
-import os
+﻿import os
 from datetime import timedelta
 
 from flask import Flask, render_template, jsonify, request
@@ -323,7 +323,7 @@ def dashboard_stats():
         },
         "users": None,
         "recent_activity": [],
-        "approval_workflow_configured": False
+        "approval_workflow_configured": True
     }
 
     if current_user.role == "Admin":

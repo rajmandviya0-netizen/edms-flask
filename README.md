@@ -10,6 +10,7 @@ role-based access and a full audit trail.
 
 - **Login and security**: Flask-Login sessions, CSRF protection on every form and API call, account lockout (5 wrong passwords blocks that username for about 10 minutes), POST-only logout, secure session cookies and security headers.
 - **Roles**: Admin and User. In strict access mode, normal users see only their own documents; admins see everything.
+- **Sign-up page**: people can create their own account. The role is always User, passwords need 12 or more characters, duplicate usernames and emails are blocked, and each sign-up is recorded in the audit trail.
 - **Documents**: upload (25 MB limit), preview, download, metadata (department, reference number, description, status), delete (admin only).
 - **Versions**: upload new versions and download any older version.
 - **Folders**: folders and subfolders, move documents between folders.
